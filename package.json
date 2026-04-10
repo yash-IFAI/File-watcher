@@ -1,0 +1,20 @@
+{
+  "name": "automated-brief-watcher",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone watcher for automated brief ingestion",
+  "scripts": {
+    "start": "node src/watcher.js",
+    "start:once": "node src/watcher.js --once"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "dotenv": "^17.2.3",
+    "form-data": "^4.0.4",
+    "node-fetch": "^3.3.2"
+  }
+}
