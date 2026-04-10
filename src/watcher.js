@@ -33,12 +33,16 @@ const CONFIG = {
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean),
+  logFilePath:
+    process.env.AUTOMATED_INGEST_LOG_FILE ||
+    path.join(process.cwd(), "logs", "automated-brief-watcher.log.txt"),
   folderConfigMap: parseFolderConfigMap(process.env.AUTOMATED_INGEST_FOLDER_CONFIG_MAP),
 };
 
 let authToken = null;
 let sessionCookie = "";
 const inFlight = new Set();
+let logStream = null;
 
 function parseFolderConfigMap(rawValue) {
   if (!rawValue) return {};
@@ -62,12 +66,98 @@ function formatNow() {
   return new Date().toISOString();
 }
 
-function log(message, extra = null) {
-  if (extra) {
-    console.log(`[${formatNow()}] ${message}`, extra);
-  } else {
-    console.log(`[${formatNow()}] ${message}`);
+function toSingleLineJson(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
   }
+}
+
+async function initializeLogger() {
+  const logDirectory = path.dirname(CONFIG.logFilePath);
+  await fs.promises.mkdir(logDirectory, { recursive: true });
+
+  logStream = fs.createWriteStream(CONFIG.logFilePath, { flags: "a" });
+  logStream.on("error", (error) => {
+    console.error(`[${formatNow()}] [ERROR] Failed writing log file`, {
+      error: error?.message || String(error),
+      logFilePath: CONFIG.logFilePath,
+    });
+  });
+}
+
+async function closeLogger() {
+  if (!logStream) return;
+
+  await new Promise((resolve) => {
+    logStream.end(resolve);
+  });
+}
+
+function log(message, extra = null, level = "INFO") {
+  const baseLine = `[${formatNow()}] [${level}] ${message}`;
+  const fullLine = extra ? `${baseLine} ${toSingleLineJson(extra)}` : baseLine;
+
+  console.log(fullLine);
+
+  if (logStream && !logStream.destroyed) {
+    logStream.write(`${fullLine}\n`);
+  }
+}
+
+function createStepLogger(context = {}) {
+  let step = 0;
+  return (message, extra = null, level = "INFO") => {
+    step += 1;
+    const stepContext = {
+      ...context,
+      step,
+    };
+    log(message, extra ? { ...stepContext, ...extra } : stepContext, level);
+  };
+}
+
+function getFileEvaluation(filePath) {
+  const extension = path.extname(filePath).toLowerCase();
+  if (!CONFIG.allowedExtensions.includes(extension)) {
+    return {
+      shouldProcess: false,
+      extension,
+      reason: "extension-not-allowed",
+      folderName: null,
+    };
+  }
+
+  const folderName = getFolderNameForFile(filePath);
+  if (!folderName) {
+    return {
+      shouldProcess: false,
+      extension,
+      reason: "file-outside-watch-root",
+      folderName: null,
+    };
+  }
+
+  const isWatchedFolder = CONFIG.watchFolders.some(
+    (allowedFolder) => allowedFolder.toLowerCase() === folderName.toLowerCase(),
+  );
+
+  if (!isWatchedFolder) {
+    return {
+      shouldProcess: false,
+      extension,
+      reason: "folder-not-configured",
+      folderName,
+    };
+  }
+
+  return {
+    shouldProcess: true,
+    extension,
+    reason: "eligible",
+    folderName,
+  };
 }
 
 function assertRequiredConfig() {
@@ -82,8 +172,11 @@ function assertRequiredConfig() {
 
 async function login() {
   const loginUrl = new URL(CONFIG.loginEndpoint, CONFIG.apiBaseUrl).toString();
+  const stepLog = createStepLogger({ flow: "login", loginUrl });
 
-  log("Authenticating watcher user", { loginUrl, username: CONFIG.username });
+  stepLog("Preparing watcher authentication", { username: CONFIG.username });
+
+  stepLog("Sending login request");
 
   const response = await fetch(loginUrl, {
     method: "POST",
@@ -96,14 +189,22 @@ async function login() {
     }),
   });
 
+  stepLog("Received login response", {
+    status: response.status,
+    statusText: response.statusText,
+  });
+
   if (!response.ok) {
     const text = await response.text();
+    stepLog("Login response indicates failure", { responseBody: text }, "ERROR");
     throw new Error(`Login failed (${response.status} ${response.statusText}): ${text}`);
   }
 
+  stepLog("Parsing login response body");
   const responseJson = await response.json();
   authToken = responseJson?.token || null;
 
+  stepLog("Extracting session cookie from response headers");
   const rawSetCookie = response.headers.raw()["set-cookie"] || [];
   sessionCookie = rawSetCookie.map((cookie) => cookie.split(";")[0]).join("; ");
 
@@ -115,7 +216,7 @@ async function login() {
     throw new Error("Login succeeded but no session cookie was returned");
   }
 
-  log("Authentication successful");
+  stepLog("Authentication completed successfully");
 }
 
 function getFolderNameForFile(filePath) {
@@ -123,18 +224,6 @@ function getFolderNameForFile(filePath) {
   if (!relative || relative.startsWith("..")) return null;
   const parts = relative.split(path.sep);
   return parts[0] || null;
-}
-
-function shouldProcessFile(filePath) {
-  const extension = path.extname(filePath).toLowerCase();
-  if (!CONFIG.allowedExtensions.includes(extension)) return false;
-
-  const folderName = getFolderNameForFile(filePath);
-  if (!folderName) return false;
-
-  return CONFIG.watchFolders.some(
-    (allowedFolder) => allowedFolder.toLowerCase() === folderName.toLowerCase(),
-  );
 }
 
 function sanitizeFileName(fileName) {
@@ -169,12 +258,21 @@ async function moveToProcessed(filePath, folderName) {
 }
 
 async function postFileToAutomatedBriefEndpoint(filePath, folderName, retryCount = 0) {
+  const stepLog = createStepLogger({
+    flow: "process-api-call",
+    filePath,
+    folderName,
+    retryCount,
+  });
+
   if (!authToken || !sessionCookie) {
+    stepLog("Missing authentication context. Logging in again before upload.");
     await login();
   }
 
   const processUrl = new URL(CONFIG.processEndpoint, CONFIG.apiBaseUrl).toString();
   const formData = new FormData();
+  stepLog("Preparing upload payload", { processUrl });
 
   formData.append("file", fs.createReadStream(filePath), {
     filename: path.basename(filePath),
@@ -185,8 +283,10 @@ async function postFileToAutomatedBriefEndpoint(filePath, folderName, retryCount
   const mappedConfigId = CONFIG.folderConfigMap[folderName.toLowerCase()];
   if (mappedConfigId && Number.isInteger(mappedConfigId)) {
     formData.append("configId", String(mappedConfigId));
+    stepLog("Attached mapped config ID", { mappedConfigId });
   }
 
+  stepLog("Sending file to automated ingestion API");
   const response = await fetch(processUrl, {
     method: "POST",
     headers: {
@@ -197,8 +297,13 @@ async function postFileToAutomatedBriefEndpoint(filePath, folderName, retryCount
     body: formData,
   });
 
+  stepLog("Received ingestion API response", {
+    status: response.status,
+    statusText: response.statusText,
+  });
+
   if ((response.status === 401 || response.status === 403) && retryCount < 1) {
-    log("Session/token expired. Re-authenticating and retrying once.");
+    stepLog("Session/token expired. Re-authenticating and retrying once.", null, "WARN");
     authToken = null;
     sessionCookie = "";
     await login();
@@ -208,11 +313,13 @@ async function postFileToAutomatedBriefEndpoint(filePath, folderName, retryCount
   const text = await response.text();
 
   if (!response.ok) {
+    stepLog("Ingestion API returned failure", { responseBody: text }, "ERROR");
     throw new Error(
       `Automated brief API failed (${response.status} ${response.statusText}): ${text}`,
     );
   }
 
+  stepLog("Parsing successful ingestion response body");
   let parsed = null;
   try {
     parsed = JSON.parse(text);
@@ -220,25 +327,49 @@ async function postFileToAutomatedBriefEndpoint(filePath, folderName, retryCount
     parsed = { raw: text };
   }
 
+  stepLog("Ingestion API call finished successfully");
+
   return parsed;
 }
 
 async function processFile(filePath) {
-  if (inFlight.has(filePath)) return;
-  if (!shouldProcessFile(filePath)) return;
+  const traceId = `${Date.now()}-${path.basename(filePath)}`;
+  const stepLog = createStepLogger({ flow: "process-file", traceId, filePath });
 
-  const folderName = getFolderNameForFile(filePath);
-  if (!folderName) return;
+  stepLog("Received file for processing");
 
+  if (inFlight.has(filePath)) {
+    stepLog("File already being processed. Skipping duplicate trigger.", null, "WARN");
+    return;
+  }
+
+  const evaluation = getFileEvaluation(filePath);
+  stepLog("Evaluated file eligibility", {
+    shouldProcess: evaluation.shouldProcess,
+    reason: evaluation.reason,
+    extension: evaluation.extension,
+    folderName: evaluation.folderName,
+  });
+
+  if (!evaluation.shouldProcess || !evaluation.folderName) {
+    stepLog("Skipping file because it is not eligible for processing", {
+      reason: evaluation.reason,
+    });
+    return;
+  }
+
+  const folderName = evaluation.folderName;
   inFlight.add(filePath);
+  stepLog("Marked file as in-flight");
 
   try {
-    log("Detected file for automated ingestion", { filePath, folderName });
+    stepLog("Starting automated ingestion workflow", { folderName });
 
     const result = await postFileToAutomatedBriefEndpoint(filePath, folderName);
+    stepLog("File uploaded successfully. Moving to processed folder.");
     const movedPath = await moveToProcessed(filePath, folderName);
 
-    log("Automated ingestion completed", {
+    stepLog("Automated ingestion completed", {
       filePath,
       movedPath,
       action: result?.action || "unknown",
@@ -246,39 +377,62 @@ async function processFile(filePath) {
       hashedJobId: result?.hashedJobId || null,
     });
   } catch (error) {
-    log("Automated ingestion failed", {
+    stepLog("Automated ingestion failed", {
       filePath,
       error: error instanceof Error ? error.message : String(error),
-    });
+    }, "ERROR");
   } finally {
     inFlight.delete(filePath);
+    stepLog("Removed file from in-flight set");
   }
 }
 
 async function processExistingFilesOnce() {
+  const stepLog = createStepLogger({ flow: "once-mode" });
+  stepLog("Starting one-time processing of existing files");
+
   for (const folder of CONFIG.watchFolders) {
     const folderPath = path.join(CONFIG.watchRoot, folder);
-    if (!fs.existsSync(folderPath)) continue;
+    if (!fs.existsSync(folderPath)) {
+      stepLog("Watch folder does not exist. Skipping.", { folderPath }, "WARN");
+      continue;
+    }
+
+    stepLog("Scanning folder for existing files", { folderPath });
 
     const entries = await fs.promises.readdir(folderPath, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isFile()) continue;
       const filePath = path.join(folderPath, entry.name);
+      stepLog("Found existing file. Processing.", { filePath });
       await processFile(filePath);
     }
   }
+
+  stepLog("Completed one-time processing run");
 }
 
 async function ensureFolders() {
+  const stepLog = createStepLogger({ flow: "bootstrap-folders" });
+  stepLog("Ensuring watch and processed directories exist");
+
   await fs.promises.mkdir(CONFIG.watchRoot, { recursive: true });
   await fs.promises.mkdir(CONFIG.processedRoot, { recursive: true });
+  stepLog("Ensured root directories", {
+    watchRoot: CONFIG.watchRoot,
+    processedRoot: CONFIG.processedRoot,
+  });
 
   for (const folder of CONFIG.watchFolders) {
     await fs.promises.mkdir(path.join(CONFIG.watchRoot, folder), { recursive: true });
+    stepLog("Ensured watched subfolder", { folder });
   }
 }
 
 async function run() {
+  await initializeLogger();
+  log("Logger initialized", { logFilePath: CONFIG.logFilePath });
+
   assertRequiredConfig();
   await ensureFolders();
   await login();
@@ -289,6 +443,7 @@ async function run() {
     log("Running in one-time mode");
     await processExistingFilesOnce();
     log("One-time run complete");
+    await closeLogger();
     process.exit(0);
   }
 
@@ -321,17 +476,19 @@ async function run() {
   process.on("SIGINT", async () => {
     log("Shutting down watcher (SIGINT)");
     await watcher.close();
+    await closeLogger();
     process.exit(0);
   });
 
   process.on("SIGTERM", async () => {
     log("Shutting down watcher (SIGTERM)");
     await watcher.close();
+    await closeLogger();
     process.exit(0);
   });
 }
 
 run().catch((error) => {
-  log("Watcher startup failed", { error: error?.message || String(error) });
-  process.exit(1);
+  log("Watcher startup failed", { error: error?.message || String(error) }, "ERROR");
+  closeLogger().finally(() => process.exit(1));
 });
