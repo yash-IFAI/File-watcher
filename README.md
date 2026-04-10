@@ -38,6 +38,39 @@ One-time mode (process existing files and exit):
 npm run start:once
 ```
 
+Run through the CLI command directly:
+
+```bash
+file-watcher
+file-watcher --once
+```
+
+## Publish as npm package
+
+1. Ensure the package is logged in and ready:
+
+```bash
+npm login
+```
+
+2. Publish:
+
+```bash
+npm publish
+```
+
+3. Install globally (on any machine):
+
+```bash
+npm install -g file-watcher-service
+```
+
+4. Run:
+
+```bash
+file-watcher
+```
+
 ## Environment variables
 
 - `AUTOMATED_INGEST_USERNAME` (required)

@@ -1,12 +1,14 @@
 {
-  "name": "automated-brief-watcher",
+  "name": "file-watcher-service",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "description": "Standalone watcher for automated brief ingestion",
+  "bin": {
+    "file-watcher": "index.js"
+  },
   "scripts": {
-    "start": "node src/watcher.js",
-    "start:once": "node src/watcher.js --once"
+    "start": "node index.js",
+    "start:once": "node index.js --once"
   },
   "engines": {
     "node": ">=18"
