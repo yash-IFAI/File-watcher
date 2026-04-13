@@ -1,0 +1,23 @@
+{
+    "username": "watcher-service-user",
+    "password": "replace-me",
+    "apiBaseUrl": "https://dev.ifaiplanx.com",
+    "loginEndpoint": "/api/auth/login",
+    "processEndpoint": "/api/extractai/process-automated-brief",
+    "watchRoot": "./uploads/automated-briefs",
+    "processedRoot": "./uploads/automated-briefs/.processed",
+    "watchFolders": [
+        "us bank",
+        "newell"
+    ],
+    "allowedExtensions": [
+        ".pdf",
+        ".doc",
+        ".docx"
+    ],
+    "logFilePath": "./logs/automated-brief-watcher.log.txt",
+    "folderConfigMap": {
+        "us bank": 6,
+        "newell": 3
+    }
+}

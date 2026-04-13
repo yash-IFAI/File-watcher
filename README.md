@@ -2,6 +2,14 @@
 
 CLI package that watches incoming brief files and sends them to the automated ingestion API.
 
+## Non-Technical Quick Start (Windows)
+
+1. Copy `config.example.json` to `config.json`.
+2. Open `config.json` and fill in `username` and `password`.
+3. Double-click `start-watcher.bat`.
+
+The watcher window will stay open and show live status while it monitors your configured folders.
+
 ## Install
 
 Global install (recommended for operators and shared environments):
@@ -56,6 +64,28 @@ Notes:
 - If you run from a different folder, the CLI will look for `.env` there.
 - Relative paths in env values are resolved from the current working folder.
 - Use absolute paths in `.env` if you plan to run from multiple locations.
+
+## Configuration Priority
+
+At runtime, the watcher uses configuration in this order:
+
+1. `config.json` in the current folder (recommended)
+2. Environment variables / `.env`
+3. Built-in defaults for optional values
+
+`config.json` keys:
+
+- `username`
+- `password`
+- `apiBaseUrl`
+- `loginEndpoint`
+- `processEndpoint`
+- `watchRoot`
+- `processedRoot`
+- `watchFolders` (array or comma-separated string)
+- `allowedExtensions` (array or comma-separated string)
+- `logFilePath`
+- `folderConfigMap` (object, for example `{ "us bank": 6, "newell": 3 }`)
 
 ## Local development
 

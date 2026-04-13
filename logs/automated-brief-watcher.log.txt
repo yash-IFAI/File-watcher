@@ -1,0 +1,40 @@
+[2026-04-13T12:01:03.288Z] [INFO] Logger initialized {"logFilePath":"./logs/automated-brief-watcher.log.txt"}
+[2026-04-13T12:01:03.293Z] [INFO] Ensuring watch and processed directories exist {"flow":"bootstrap-folders","step":1}
+[2026-04-13T12:01:03.295Z] [INFO] Ensured root directories {"flow":"bootstrap-folders","step":2,"watchRoot":"./uploads/automated-briefs","processedRoot":"./uploads/automated-briefs/.processed"}
+[2026-04-13T12:01:03.295Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":3,"folder":"us bank"}
+[2026-04-13T12:01:03.295Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":4,"folder":"newell"}
+[2026-04-13T12:01:03.296Z] [INFO] Preparing watcher authentication {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":1,"username":"watcher-service-user"}
+[2026-04-13T12:01:03.296Z] [INFO] Sending login request {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":2}
+[2026-04-13T12:01:04.576Z] [INFO] Received login response {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":3,"status":401,"statusText":"Unauthorized"}
+[2026-04-13T12:01:04.577Z] [ERROR] Login response indicates failure {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":4,"responseBody":"{\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:01:04.577Z] [ERROR] Watcher startup failed {"error":"Login failed (401 Unauthorized): {\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:01:13.218Z] [INFO] Logger initialized {"logFilePath":"./logs/automated-brief-watcher.log.txt"}
+[2026-04-13T12:01:13.223Z] [INFO] Ensuring watch and processed directories exist {"flow":"bootstrap-folders","step":1}
+[2026-04-13T12:01:13.224Z] [INFO] Ensured root directories {"flow":"bootstrap-folders","step":2,"watchRoot":"./uploads/automated-briefs","processedRoot":"./uploads/automated-briefs/.processed"}
+[2026-04-13T12:01:13.225Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":3,"folder":"us bank"}
+[2026-04-13T12:01:13.225Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":4,"folder":"newell"}
+[2026-04-13T12:01:13.225Z] [INFO] Preparing watcher authentication {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":1,"username":"watcher-service-user"}
+[2026-04-13T12:01:13.226Z] [INFO] Sending login request {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":2}
+[2026-04-13T12:01:14.397Z] [INFO] Received login response {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":3,"status":401,"statusText":"Unauthorized"}
+[2026-04-13T12:01:14.398Z] [ERROR] Login response indicates failure {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":4,"responseBody":"{\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:01:14.399Z] [ERROR] Watcher startup failed {"error":"Login failed (401 Unauthorized): {\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:01:40.452Z] [INFO] Logger initialized {"logFilePath":"./logs/automated-brief-watcher.log.txt"}
+[2026-04-13T12:01:40.456Z] [INFO] Ensuring watch and processed directories exist {"flow":"bootstrap-folders","step":1}
+[2026-04-13T12:01:40.458Z] [INFO] Ensured root directories {"flow":"bootstrap-folders","step":2,"watchRoot":"./uploads/automated-briefs","processedRoot":"./uploads/automated-briefs/.processed"}
+[2026-04-13T12:01:40.459Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":3,"folder":"us bank"}
+[2026-04-13T12:01:40.459Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":4,"folder":"newell"}
+[2026-04-13T12:01:40.460Z] [INFO] Preparing watcher authentication {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":1,"username":"watcher-service-user"}
+[2026-04-13T12:01:40.460Z] [INFO] Sending login request {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":2}
+[2026-04-13T12:01:41.584Z] [INFO] Received login response {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":3,"status":401,"statusText":"Unauthorized"}
+[2026-04-13T12:01:41.585Z] [ERROR] Login response indicates failure {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":4,"responseBody":"{\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:01:41.585Z] [ERROR] Watcher startup failed {"error":"Login failed (401 Unauthorized): {\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:02:14.515Z] [INFO] Logger initialized {"logFilePath":"./logs/automated-brief-watcher.log.txt"}
+[2026-04-13T12:02:14.519Z] [INFO] Ensuring watch and processed directories exist {"flow":"bootstrap-folders","step":1}
+[2026-04-13T12:02:14.521Z] [INFO] Ensured root directories {"flow":"bootstrap-folders","step":2,"watchRoot":"./uploads/automated-briefs","processedRoot":"./uploads/automated-briefs/.processed"}
+[2026-04-13T12:02:14.522Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":3,"folder":"us bank"}
+[2026-04-13T12:02:14.522Z] [INFO] Ensured watched subfolder {"flow":"bootstrap-folders","step":4,"folder":"newell"}
+[2026-04-13T12:02:14.523Z] [INFO] Preparing watcher authentication {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":1,"username":"watcher-service-user"}
+[2026-04-13T12:02:14.523Z] [INFO] Sending login request {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":2}
+[2026-04-13T12:02:15.887Z] [INFO] Received login response {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":3,"status":401,"statusText":"Unauthorized"}
+[2026-04-13T12:02:15.888Z] [ERROR] Login response indicates failure {"flow":"login","loginUrl":"https://dev.ifaiplanx.com/api/auth/login","step":4,"responseBody":"{\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}
+[2026-04-13T12:02:15.888Z] [ERROR] Watcher startup failed {"error":"Login failed (401 Unauthorized): {\"success\":false,\"error\":\"INVALID_CREDENTIALS\",\"message\":\"Invalid credentials\"}"}

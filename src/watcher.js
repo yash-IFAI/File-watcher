@@ -9,34 +9,93 @@ import FormData from "form-data";
 
 const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 const DEFAULT_WATCH_FOLDERS = ["us bank", "newell"];
+const CONFIG_FILE_NAME = "config.json";
+
+function readRuntimeConfigFromJson() {
+  const configPath = path.join(process.cwd(), CONFIG_FILE_NAME);
+  if (!fs.existsSync(configPath)) {
+    return {};
+  }
+
+  try {
+    const content = fs.readFileSync(configPath, "utf8");
+    const parsed = JSON.parse(content);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.warn(
+      `[watcher] Failed to parse ${CONFIG_FILE_NAME}. Falling back to environment variables.`,
+      error instanceof Error ? error.message : String(error),
+    );
+    return {};
+  }
+}
+
+function normalizeList(value, fallbackCsv) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  const raw = typeof value === "string" && value.trim() ? value : fallbackCsv;
+  return String(raw)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeFolderConfigMap(value) {
+  if (!value) return {};
+
+  if (typeof value === "string") {
+    return parseFolderConfigMap(value);
+  }
+
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, mapValue]) => [
+        key.trim().toLowerCase(),
+        Number.isInteger(Number(mapValue)) ? Number(mapValue) : null,
+      ]),
+    );
+  }
+
+  return {};
+}
+
+const runtimeConfig = readRuntimeConfigFromJson();
 
 const CONFIG = {
-  apiBaseUrl: process.env.AUTOMATED_INGEST_API_BASE_URL || "http://localhost:5000",
-  loginEndpoint: process.env.AUTOMATED_INGEST_LOGIN_ENDPOINT || "/api/auth/login",
+  apiBaseUrl: runtimeConfig.apiBaseUrl || process.env.AUTOMATED_INGEST_API_BASE_URL || "http://localhost:5000",
+  loginEndpoint:
+    runtimeConfig.loginEndpoint || process.env.AUTOMATED_INGEST_LOGIN_ENDPOINT || "/api/auth/login",
   processEndpoint:
-    process.env.AUTOMATED_INGEST_PROCESS_ENDPOINT || "/api/extractai/process-automated-brief",
-  username: process.env.AUTOMATED_INGEST_USERNAME || "",
-  password: process.env.AUTOMATED_INGEST_PASSWORD || "",
+    runtimeConfig.processEndpoint ||
+    process.env.AUTOMATED_INGEST_PROCESS_ENDPOINT ||
+    "/api/extractai/process-automated-brief",
+  username: runtimeConfig.username || process.env.AUTOMATED_INGEST_USERNAME || "",
+  password: runtimeConfig.password || process.env.AUTOMATED_INGEST_PASSWORD || "",
   watchRoot:
+    runtimeConfig.watchRoot ||
     process.env.AUTOMATED_INGEST_WATCH_ROOT ||
     path.join(process.cwd(), "uploads", "automated-briefs"),
   processedRoot:
+    runtimeConfig.processedRoot ||
     process.env.AUTOMATED_INGEST_PROCESSED_ROOT ||
     path.join(process.cwd(), "uploads", "automated-briefs", ".processed"),
-  watchFolders: (process.env.AUTOMATED_INGEST_WATCH_FOLDERS || DEFAULT_WATCH_FOLDERS.join(","))
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean),
-  allowedExtensions: (
-    process.env.AUTOMATED_INGEST_ALLOWED_EXTENSIONS || DEFAULT_ALLOWED_EXTENSIONS.join(",")
-  )
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean),
+  watchFolders: normalizeList(
+    runtimeConfig.watchFolders,
+    process.env.AUTOMATED_INGEST_WATCH_FOLDERS || DEFAULT_WATCH_FOLDERS.join(","),
+  ),
+  allowedExtensions: normalizeList(
+    runtimeConfig.allowedExtensions,
+    process.env.AUTOMATED_INGEST_ALLOWED_EXTENSIONS || DEFAULT_ALLOWED_EXTENSIONS.join(","),
+  ).map((value) => value.toLowerCase()),
   logFilePath:
+    runtimeConfig.logFilePath ||
     process.env.AUTOMATED_INGEST_LOG_FILE ||
     path.join(process.cwd(), "logs", "automated-brief-watcher.log.txt"),
-  folderConfigMap: parseFolderConfigMap(process.env.AUTOMATED_INGEST_FOLDER_CONFIG_MAP),
+  folderConfigMap: normalizeFolderConfigMap(
+    runtimeConfig.folderConfigMap || process.env.AUTOMATED_INGEST_FOLDER_CONFIG_MAP,
+  ),
 };
 
 let authToken = null;
