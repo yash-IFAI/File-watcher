@@ -7,6 +7,7 @@ CLI package that watches incoming brief files and sends them to the automated in
 1. Copy `config.example.json` to `config.json`.
 2. Open `config.json` and fill in `username` and `password`.
 3. Double-click `start-watcher.bat`.
+4. If this is the first run from an extracted ZIP folder, allow 1-2 minutes for automatic package installation.
 
 The watcher window will stay open and show live status while it monitors your configured folders.
 

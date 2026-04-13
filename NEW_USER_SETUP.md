@@ -20,19 +20,23 @@ That is it for setup.
 
 1. Double-click `start-watcher.bat`.
 2. A window opens and starts monitoring files.
-3. Drop files into:
-   - `uploads/automated-briefs/us bank`
-   - `uploads/automated-briefs/newell`
-4. The watcher uploads files automatically.
-5. Successfully processed files move to:
-   - `uploads/automated-briefs/.processed/us bank`
-   - `uploads/automated-briefs/.processed/newell`
+3. On first run after ZIP extraction, the app may install required packages automatically.
+4. Wait until the start message appears.
+5. Drop files into:
+  - `uploads/automated-briefs/us bank`
+  - `uploads/automated-briefs/newell`
+6. The watcher uploads files automatically.
+7. Successfully processed files move to:
+  - `uploads/automated-briefs/.processed/us bank`
+  - `uploads/automated-briefs/.processed/newell`
 
 What you will see in the window:
 - Watcher started
 - Monitoring folder paths
-- New file detected
-- Upload successful (or clear error if something failed)
+- New file detected: report.pdf
+- Upload successful
+
+You get the same visibility as terminal logs, with no manual command steps.
 
 ## Option 2: Terminal/Advanced Setup (For Technical Users)
 
