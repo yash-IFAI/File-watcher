@@ -31,9 +31,28 @@ if exist "dist\file-watcher.exe" (
     echo Node.js was not found. Install Node.js 18+ or provide dist\file-watcher.exe.
     set "EXIT_CODE=1"
   ) else (
+    if not exist "node_modules\dotenv\package.json" (
+      echo First run detected. Installing required packages. This may take 1-2 minutes...
+      where npm >nul 2>nul
+      if errorlevel 1 (
+        echo npm was not found. Reinstall Node.js 18+ and try again.
+        set "EXIT_CODE=1"
+      ) else (
+        npm install
+        if errorlevel 1 (
+          echo Failed to install required packages. Please check internet connection and try again.
+          set "EXIT_CODE=1"
+        ) else (
+          echo Package install complete.
+        )
+      )
+    )
+
+    if not defined EXIT_CODE (
     echo Starting watcher using Node.js ...
     node index.js %*
     set "EXIT_CODE=!ERRORLEVEL!"
+    )
   )
 )
 
